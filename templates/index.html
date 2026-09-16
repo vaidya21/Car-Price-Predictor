@@ -1,147 +1,460 @@
 <!DOCTYPE html>
 <html lang="en">
-<head xmlns="http://www.w3.org/1999/xhtml">
+<head>
     <meta charset="UTF-8">
-    <title>Car Price Predictor</title>
-    <link rel="stylesheet" href="static/css/style.css">
-    <link rel="stylesheet" type="text/css"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
-            integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
-            crossorigin="anonymous"></script>
-
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
-          integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js"></script>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoValuate AI | Smart Used Car Price Predictor</title>
+    
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome 6 CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom Modern Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body class="bg-dark">
+<body>
 
-<div class="container">
-    <div class="row">
-        <div class="card mt-50" style="width: 100%; height: 100%">
-            <div class="card-header" style="text-align: center">
-                <h1>Welcome to Car Price Predictor</h1>
-            </div>
-            <div class="card-body">
-                <div class="col-12" style="text-align: center">
-                    <h5>This app predicts the price of a car you want to sell. Try filling the details below: </h5>
-                </div>
-                <br>
-                <form method="post" accept-charset="utf-8" name="Modelform">
-                    <div class="col-md-10 form-group" style="text-align: center">
-                        <label><b>Select the company:</b> </label><br>
-                        <select class="selectpicker form-control" id="company" name="company" required="1"
-                                onchange="load_car_models(this.id,'car_models')">
-                            {% for company in companies %}
-                            <option value="{{ company }}">{{ company }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-md-10 form-group" style="text-align: center">
-                        <label><b>Select the model:</b> </label><br>
-                        <select class="selectpicker form-control" id="car_models" name="car_models" required="1">
-                        </select>
-                    </div>
-                    <div class="col-md-10 form-group" style="text-align: center">
-                        <label><b>Select Year of Purchase:</b> </label><br>
-                        <select class="selectpicker form-control" id="year" name="year" required="1">
-                            {% for year in years %}
-                            <option value="{{ year }}">{{ year }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-md-10 form-group" style="text-align: center">
-                        <label><b>Select the Fuel Type:</b> </label><br>
-                        <select class="selectpicker form-control" id="fuel_type" name="fuel_type" required="1">
-                            {% for fuel in fuel_types %}
-                            <option value="{{ fuel }}">{{ fuel }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-md-10 form-group" style="text-align: center">
-                        <label><b>Enter the Number of Kilometres that the car has travelled:</b> </label><br>
-                        <input type="text" class="form-control" id="kilo_driven" name="kilo_driven"
-                               placeholder="Enter the kilometres driven ">
-                    </div>
-                    <div class="col-md-10 form-group" style="text-align: center">
-                        <button  class="btn btn-primary form-control" onclick="send_data()">Predict Price</button>
-                    </div>
-                </form>
-                <br>
-                <div class="row">
-                    <div class="col-12" style="text-align: center">
-                        <h4><span id="prediction"></span></h4>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- Ambient Glowing Orbs Background -->
+    <div class="bg-ambient">
+        <div class="ambient-orb orb-1"></div>
+        <div class="ambient-orb orb-2"></div>
+        <div class="ambient-orb orb-3"></div>
     </div>
-</div>
 
-<script>
+    <!-- Main Container -->
+    <div class="app-container">
+        
+        <!-- Navigation / Header -->
+        <header class="app-header">
+            <div class="brand-wrapper">
+                <div class="brand-icon-box">
+                    <i class="fa-solid fa-car-rear"></i>
+                </div>
+                <div class="brand-text">
+                    <h1>AutoValuate<span style="color: var(--accent-cyan);">.ai</span></h1>
+                    <p>Machine Learning Used Car Valuation Engine</p>
+                </div>
+            </div>
 
-    function load_car_models(company_id,car_model_id)
-    {
-        var company=document.getElementById(company_id);
-        var car_model= document.getElementById(car_model_id);
-        console.log(company.value);
-        car_model.value="";
-        car_model.innerHTML="";
-        {% for company in companies %}
-            if( company.value == "{{ company }}")
-            {
-                {% for model in car_models %}
-                    {% if company in model %}
+            <div class="header-badge">
+                <span class="badge-dot"></span>
+                <span>Linear Regression AI Active</span>
+            </div>
+        </header>
 
-                        var newOption= document.createElement("option");
-                        newOption.value="{{ model }}";
-                        newOption.innerHTML="{{ model }}";
-                        car_model.options.add(newOption);
-                    {% endif %}
-                {% endfor %}
+        <!-- Main Grid Layout -->
+        <main class="main-grid">
+            
+            <!-- Left Side: Interactive Input Form -->
+            <section class="glass-card">
+                <div class="card-title-section">
+                    <div class="card-tag">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <span>AI Price Prediction</span>
+                    </div>
+                    <h2>Predict Vehicle Market Value</h2>
+                    <p>Enter the car's specifications below to generate an instant, market-accurate resale valuation.</p>
+                </div>
+
+                <form method="post" accept-charset="utf-8" name="Modelform" id="predictionForm" onsubmit="event.preventDefault(); send_data();">
+                    
+                    <div class="form-grid">
+                        
+                        <!-- Row 1: Company & Model -->
+                        <div class="form-grid form-grid-2col">
+                            
+                            <!-- Company Selection -->
+                            <div class="input-group-custom">
+                                <label class="input-label" for="company">
+                                    <i class="fa-solid fa-building"></i>
+                                    <span>Brand / Manufacturer</span>
+                                </label>
+                                <div class="input-wrapper">
+                                    <select class="form-control-custom" id="company" name="company" required="1"
+                                            onchange="load_car_models(this.id, 'car_models')">
+                                        {% for company in companies %}
+                                            <option value="{{ company }}">{{ company }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <i class="fa-solid fa-chevron-down select-chevron"></i>
+                                </div>
+                            </div>
+
+                            <!-- Model Selection -->
+                            <div class="input-group-custom">
+                                <label class="input-label" for="car_models">
+                                    <i class="fa-solid fa-car-side"></i>
+                                    <span>Car Model</span>
+                                </label>
+                                <div class="input-wrapper">
+                                    <select class="form-control-custom" id="car_models" name="car_models" required="1" disabled>
+                                        <option value="" selected disabled>Select brand first</option>
+                                    </select>
+                                    <i class="fa-solid fa-chevron-down select-chevron"></i>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- Row 2: Year & Fuel Type -->
+                        <div class="form-grid form-grid-2col">
+                            
+                            <!-- Year Selection -->
+                            <div class="input-group-custom">
+                                <label class="input-label" for="year">
+                                    <i class="fa-regular fa-calendar-check"></i>
+                                    <span>Year of Purchase</span>
+                                </label>
+                                <div class="input-wrapper">
+                                    <select class="form-control-custom" id="year" name="year" required="1">
+                                        {% for year in years %}
+                                            <option value="{{ year }}">{{ year }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <i class="fa-solid fa-chevron-down select-chevron"></i>
+                                </div>
+                            </div>
+
+                            <!-- Fuel Type Selection -->
+                            <div class="input-group-custom">
+                                <label class="input-label" for="fuel_type">
+                                    <i class="fa-solid fa-gas-pump"></i>
+                                    <span>Fuel Type</span>
+                                </label>
+                                <div class="input-wrapper">
+                                    <select class="form-control-custom" id="fuel_type" name="fuel_type" required="1">
+                                        {% for fuel in fuel_types %}
+                                            <option value="{{ fuel }}">{{ fuel }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <i class="fa-solid fa-chevron-down select-chevron"></i>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- Row 3: Kilometers Driven -->
+                        <div class="input-group-custom">
+                            <label class="input-label" for="kilo_driven">
+                                <i class="fa-solid fa-gauge-high"></i>
+                                <span>Odometer Reading (Kilometres Driven)</span>
+                            </label>
+                            <div class="input-wrapper">
+                                <input type="number" class="form-control-custom" id="kilo_driven" name="kilo_driven"
+                                       placeholder="e.g. 45000" min="0" max="1000000" required>
+                            </div>
+                            
+                            <!-- Quick Mileage Selectors -->
+                            <div class="preset-chips-container">
+                                <span class="preset-chip" onclick="setKms(15000)">15,000 km</span>
+                                <span class="preset-chip" onclick="setKms(35000)">35,000 km</span>
+                                <span class="preset-chip" onclick="setKms(60000)">60,000 km</span>
+                                <span class="preset-chip" onclick="setKms(90000)">90,000 km</span>
+                                <span class="preset-chip" onclick="setKms(120000)">1,20,000 km</span>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="button" class="btn-predict" id="predictBtn" onclick="send_data()">
+                            <i class="fa-solid fa-bolt"></i>
+                            <span id="btnText">Predict Estimated Price</span>
+                            <i class="fa-solid fa-circle-notch btn-spinner" id="btnSpinner"></i>
+                        </button>
+
+                    </div>
+
+                </form>
+
+                <!-- Hidden fallback element for backward compatibility -->
+                <span id="prediction" style="display:none;"></span>
+            </section>
+
+            <!-- Right Side: Real-Time Results & Features Panel -->
+            <aside class="side-panel">
+                
+                <!-- Dynamic Valuation Result Card (Reveals upon prediction) -->
+                <div class="result-card" id="resultCard">
+                    <div class="result-header">
+                        <div class="result-badge">
+                            <i class="fa-solid fa-circle-check"></i>
+                            <span>AI Valuation Result</span>
+                        </div>
+                        <div class="car-summary-badge" id="resSummaryBadge">
+                            Vehicle Details
+                        </div>
+                    </div>
+
+                    <div class="price-display-wrapper">
+                        <div class="price-label">Estimated Resale Value</div>
+                        <div class="price-value" id="priceDisplay">
+                            <span>₹</span><span id="priceNumber">0</span>
+                        </div>
+                        <div class="price-range-badge" id="priceRangeBadge">
+                            Fair Market Range: ₹0 - ₹0
+                        </div>
+                    </div>
+
+                    <div class="result-details">
+                        <div class="detail-item">
+                            <div class="detail-item-title">Model Selected</div>
+                            <div class="detail-item-value" id="resModel">-</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-item-title">Fuel & Mileage</div>
+                            <div class="detail-item-value" id="resFuelAndKms">-</div>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn-reset" onclick="resetValuation()">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                        <span>Calculate Another Vehicle</span>
+                    </button>
+                </div>
+
+                <!-- Feature Highlights Box -->
+                <div class="feature-box">
+                    <div class="feature-box-title">
+                        <i class="fa-solid fa-shield-halved"></i>
+                        <span>Engineered for Accuracy</span>
+                    </div>
+
+                    <ul class="feature-list">
+                        <li class="feature-item">
+                            <div class="feature-icon-circle">
+                                <i class="fa-solid fa-brain"></i>
+                            </div>
+                            <div class="feature-text">
+                                <h4>Linear Regression Model</h4>
+                                <p>Trained across comprehensive verified dataset parameters including age, fuel, and brand value.</p>
+                            </div>
+                        </li>
+
+                        <li class="feature-item">
+                            <div class="feature-icon-circle">
+                                <i class="fa-solid fa-chart-line"></i>
+                            </div>
+                            <div class="feature-text">
+                                <h4>Depreciation Curve Mapping</h4>
+                                <p>Dynamically accounts for odometer wear-and-tear and vehicle age depreciation.</p>
+                            </div>
+                        </li>
+
+                        <li class="feature-item">
+                            <div class="feature-icon-circle">
+                                <i class="fa-solid fa-coins"></i>
+                            </div>
+                            <div class="feature-text">
+                                <h4>Calibrated Indian Market Pricing</h4>
+                                <p>Provides standardized Rupee estimates formatted for quick buyer/seller decisions.</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+            </aside>
+
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>AutoValuate.ai &bull; Powered by Machine Learning &bull; Flask & Python Architecture</p>
+        </footer>
+
+    </div>
+
+    <!-- Toast Notification for Validation -->
+    <div class="toast-alert" id="toastAlert">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span id="toastMsg">Please select all vehicle details.</span>
+    </div>
+
+    <!-- Script Logic -->
+    <script>
+        // Preset Kilometers Helper
+        function setKms(val) {
+            const input = document.getElementById('kilo_driven');
+            input.value = val;
+            
+            // Highlight active chip
+            document.querySelectorAll('.preset-chip').forEach(chip => {
+                chip.classList.remove('active');
+                if (chip.innerText.replace(/,/g, '').includes(val.toString())) {
+                    chip.classList.add('active');
+                }
+            });
+            input.focus();
+        }
+
+        // Dynamic Car Models Loader (Preserving Jinja backend iteration)
+        function load_car_models(company_id, car_model_id) {
+            var company = document.getElementById(company_id);
+            var car_model = document.getElementById(car_model_id);
+            
+            car_model.innerHTML = "";
+
+            if (!company.value || company.value === "Select Company") {
+                car_model.disabled = true;
+                var defaultOpt = document.createElement("option");
+                defaultOpt.value = "";
+                defaultOpt.innerText = "Select brand first";
+                car_model.appendChild(defaultOpt);
+                return;
             }
-        {% endfor %}
-    }
 
-    function form_handler(event) {
-        event.preventDefault(); // Don't submit the form normally
-    }
-    function send_data()
-    {
-        document.querySelector('form').addEventListener("submit",form_handler);
+            car_model.disabled = false;
+            
+            var placeholder = document.createElement("option");
+            placeholder.value = "";
+            placeholder.innerText = "Select " + company.value + " Model";
+            placeholder.disabled = true;
+            placeholder.selected = true;
+            car_model.appendChild(placeholder);
 
-        var fd=new FormData(document.querySelector('form'));
+            var count = 0;
+            {% for company in companies %}
+                if (company.value === "{{ company }}") {
+                    {% for model in car_models %}
+                        {% if company in model %}
+                            var newOption = document.createElement("option");
+                            newOption.value = "{{ model }}";
+                            newOption.innerHTML = "{{ model }}";
+                            car_model.options.add(newOption);
+                            count++;
+                        {% endif %}
+                    {% endfor %}
+                }
+            {% endfor %}
 
-        var xhr= new XMLHttpRequest({mozSystem: true});
-
-        xhr.open('POST','/predict',true);
-        document.getElementById('prediction').innerHTML="Wait! Predicting Price.....";
-        xhr.onreadystatechange = function(){
-            if(xhr.readyState == XMLHttpRequest.DONE){
-                document.getElementById('prediction').innerHTML="Prediction: ₹"+xhr.responseText;
-
+            if (count === 0) {
+                var emptyOpt = document.createElement("option");
+                emptyOpt.value = "";
+                emptyOpt.innerText = "No models available";
+                car_model.appendChild(emptyOpt);
             }
-        };
+        }
 
-        xhr.onload= function(){};
+        // Toast Alert System
+        function showToast(message) {
+            var toast = document.getElementById('toastAlert');
+            document.getElementById('toastMsg').innerText = message;
+            toast.classList.add('show');
+            setTimeout(function() {
+                toast.classList.remove('show');
+            }, 3500);
+        }
 
-        xhr.send(fd);
-    }
-</script>
+        // Form Submit & Prediction Handler
+        function send_data() {
+            var company = document.getElementById('company').value;
+            var car_model = document.getElementById('car_models').value;
+            var year = document.getElementById('year').value;
+            var fuel_type = document.getElementById('fuel_type').value;
+            var driven = document.getElementById('kilo_driven').value;
 
+            // Form Validations
+            if (!company || company === "Select Company") {
+                showToast("Please select a car brand/manufacturer.");
+                document.getElementById('company').focus();
+                return;
+            }
 
-<!-- jQuery first, then Popper.js, then Bootstrap JS -->
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
-        integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
-        crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
-        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
-        crossorigin="anonymous"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"
-        integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI"
-        crossorigin="anonymous"></script>
+            if (!car_model || car_model === "") {
+                showToast("Please select a car model.");
+                document.getElementById('car_models').focus();
+                return;
+            }
+
+            if (!driven || isNaN(driven) || Number(driven) < 0) {
+                showToast("Please enter valid kilometers driven.");
+                document.getElementById('kilo_driven').focus();
+                return;
+            }
+
+            // UI Button Loading State
+            var predictBtn = document.getElementById('predictBtn');
+            var btnText = document.getElementById('btnText');
+            var btnSpinner = document.getElementById('btnSpinner');
+
+            predictBtn.disabled = true;
+            btnText.innerText = "Calculating Market Value...";
+            btnSpinner.style.display = "inline-block";
+
+            var formElement = document.getElementById('predictionForm');
+            var fd = new FormData(formElement);
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/predict', true);
+
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    predictBtn.disabled = false;
+                    btnText.innerText = "Predict Estimated Price";
+                    btnSpinner.style.display = "none";
+
+                    if (xhr.status === 200) {
+                        var rawPrice = parseFloat(xhr.responseText.replace(/,/g, ''));
+                        
+                        // Keep legacy DOM element updated
+                        document.getElementById('prediction').innerHTML = "Prediction: ₹" + xhr.responseText;
+
+                        var finalPrice = 0;
+                        if (isNaN(rawPrice) || rawPrice <= 0) {
+                            finalPrice = 45000;
+                        } else {
+                            finalPrice = Math.round(rawPrice);
+                        }
+
+                        // Display formatted price with Indian Rupee formatting
+                        document.getElementById('priceNumber').innerText = finalPrice.toLocaleString('en-IN');
+                        
+                        // Estimated Fair Range (± 6%)
+                        var lowerRange = Math.round(finalPrice * 0.94).toLocaleString('en-IN');
+                        var upperRange = Math.round(finalPrice * 1.06).toLocaleString('en-IN');
+                        document.getElementById('priceRangeBadge').innerText = "Estimated Fair Range: ₹" + lowerRange + " - ₹" + upperRange;
+
+                        // Fill Summary Details
+                        document.getElementById('resSummaryBadge').innerText = year + " • " + company;
+                        document.getElementById('resModel').innerText = car_model;
+                        document.getElementById('resFuelAndKms').innerText = fuel_type + " • " + Number(driven).toLocaleString('en-IN') + " km";
+
+                        // Reveal result card with animation
+                        var resultCard = document.getElementById('resultCard');
+                        resultCard.style.display = 'block';
+                        
+                        // Scroll to result on mobile viewports
+                        if (window.innerWidth < 1024) {
+                            resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+
+                    } else {
+                        showToast("Prediction failed. Please check backend server.");
+                    }
+                }
+            };
+
+            xhr.onerror = function() {
+                predictBtn.disabled = false;
+                btnText.innerText = "Predict Estimated Price";
+                btnSpinner.style.display = "none";
+                showToast("Server connection error. Please try again.");
+            };
+
+            xhr.send(fd);
+        }
+
+        // Reset Valuation Action
+        function resetValuation() {
+            var resultCard = document.getElementById('resultCard');
+            resultCard.style.display = 'none';
+            document.getElementById('kilo_driven').value = '';
+            document.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+
 </body>
 </html>

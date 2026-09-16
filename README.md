@@ -2,7 +2,7 @@
  
 A complete end-to-end Machine Learning web application that predicts the selling price of used cars based on their specifications. 
 
-🔗 **Live Demo:** [https://car-price-predictor-1-8u8k.onrender.com](https://car-price-predictor-1-8u8k.onrender.com)
+**🔴 Live App:** [https://car-price-predictor-1-8u8k.onrender.com](https://car-price-predictor-1-8u8k.onrender.com)
 *(Note: Since this is hosted on a free tier, it may take 30-50 seconds to wake up the server on the first load).*
 
 ---
